@@ -16,7 +16,9 @@ from zoomer.tracking.camera import Frame
 from zoomer.types import GestureMode, HandObservation, Point
 
 __all__ = [
+    "CLOSED_PINCH",
     "FRAME_RATE",
+    "OPEN_PINCH",
     "FakeHud",
     "ScriptedFrameSource",
     "ScriptedTracker",
@@ -125,9 +127,7 @@ class FakeHud:
     rendered: list[tuple[HandObservation | None, GestureMode]] = field(default_factory=list)
     closed: bool = False
 
-    def render(
-        self, frame: Frame, observation: HandObservation | None, mode: GestureMode
-    ) -> bool:
+    def render(self, frame: Frame, observation: HandObservation | None, mode: GestureMode) -> bool:
         """Record the frame and report whether the session should continue."""
         self.rendered.append((observation, mode))
         if self.quit_after is None:
@@ -178,23 +178,55 @@ def _sequence(
     gap_from: float,
     gap_to: float,
     y_from: float,
-    y_to: float,
+    y_travel: float,
     start_time: float,
     scale: float,
 ) -> list[HandObservation]:
-    """Interpolate a hand smoothly between two poses."""
+    """Interpolate a hand smoothly between two poses.
+
+    Fingertip gaps and vertical travel are given in hand-widths and multiplied
+    by ``scale`` here. That distinction matters: a hand twice as close to the
+    camera appears twice as large *and* covers twice the normalised distance for
+    the same physical movement. Specifying motion in raw normalised units would
+    silently describe a different physical gesture whenever ``scale`` changed.
+
+    Args:
+        frames: How many frames to generate.
+        gap_from: Starting fingertip separation, in hand-widths.
+        gap_to: Ending fingertip separation, in hand-widths.
+        y_from: Starting height, in normalised frame coordinates.
+        y_travel: Upward distance covered, in hand-widths. Negative moves down.
+        start_time: Timestamp of the first frame.
+        scale: Apparent hand size, standing in for distance from the camera.
+
+    Returns:
+        The interpolated sequence.
+
+    Raises:
+        ValueError: If ``frames`` is below one.
+    """
     if frames < 1:
         raise ValueError(f"frames must be at least 1, got {frames}")
+
     span = max(frames - 1, 1)
+    y_to = y_from - y_travel * scale  # Image y decreases as the hand rises.
+
     return [
         make_hand(
-            pinch_gap=gap_from + (gap_to - gap_from) * i / span,
+            pinch_gap=(gap_from + (gap_to - gap_from) * i / span) * scale,
             index_y=y_from + (y_to - y_from) * i / span,
             timestamp=start_time + i / FRAME_RATE,
             scale=scale,
         )
         for i in range(frames)
     ]
+
+
+CLOSED_PINCH = 0.20
+"""Fingertip separation, in hand-widths, with the thumb and index touching."""
+
+OPEN_PINCH = 1.70
+"""Fingertip separation, in hand-widths, with the fingers comfortably spread."""
 
 
 def pinch_open(
@@ -207,10 +239,10 @@ def pinch_open(
     """Thumb and index finger widening: the zoom-in gesture."""
     return _sequence(
         frames,
-        gap_from=0.04,
-        gap_to=0.34,
+        gap_from=CLOSED_PINCH,
+        gap_to=OPEN_PINCH,
         y_from=index_y,
-        y_to=index_y,
+        y_travel=0.0,
         start_time=start_time,
         scale=scale,
     )
@@ -226,10 +258,10 @@ def pinch_close(
     """Thumb and index finger closing: the zoom-out gesture."""
     return _sequence(
         frames,
-        gap_from=0.34,
-        gap_to=0.04,
+        gap_from=OPEN_PINCH,
+        gap_to=CLOSED_PINCH,
         y_from=index_y,
-        y_to=index_y,
+        y_travel=0.0,
         start_time=start_time,
         scale=scale,
     )
@@ -239,16 +271,30 @@ def swipe_up(
     frames: int = 20,
     *,
     start_time: float = 0.0,
-    pinch_gap: float = 0.16,
+    start_y: float = 0.80,
+    travel: float = 1.5,
+    pinch_gap: float = 0.80,
     scale: float = 0.20,
 ) -> list[HandObservation]:
-    """Index finger rising: the scroll-up gesture."""
+    """Index finger rising: the scroll-up gesture.
+
+    Args:
+        frames: How many frames the gesture spans.
+        start_time: Timestamp of the first frame.
+        start_y: Height the hand starts at, in normalised coordinates.
+        travel: Distance risen, in hand-widths.
+        pinch_gap: Fingertip separation held throughout, in hand-widths.
+        scale: Apparent hand size.
+
+    Returns:
+        The scripted gesture.
+    """
     return _sequence(
         frames,
         gap_from=pinch_gap,
         gap_to=pinch_gap,
-        y_from=0.70,
-        y_to=0.30,
+        y_from=start_y,
+        y_travel=travel,
         start_time=start_time,
         scale=scale,
     )
@@ -258,16 +304,30 @@ def swipe_down(
     frames: int = 20,
     *,
     start_time: float = 0.0,
-    pinch_gap: float = 0.16,
+    start_y: float = 0.20,
+    travel: float = 1.5,
+    pinch_gap: float = 0.80,
     scale: float = 0.20,
 ) -> list[HandObservation]:
-    """Index finger lowering: the scroll-down gesture."""
+    """Index finger lowering: the scroll-down gesture.
+
+    Args:
+        frames: How many frames the gesture spans.
+        start_time: Timestamp of the first frame.
+        start_y: Height the hand starts at, in normalised coordinates.
+        travel: Distance descended, in hand-widths.
+        pinch_gap: Fingertip separation held throughout, in hand-widths.
+        scale: Apparent hand size.
+
+    Returns:
+        The scripted gesture.
+    """
     return _sequence(
         frames,
         gap_from=pinch_gap,
         gap_to=pinch_gap,
-        y_from=0.30,
-        y_to=0.70,
+        y_from=start_y,
+        y_travel=-travel,
         start_time=start_time,
         scale=scale,
     )
@@ -318,6 +378,7 @@ def with_jitter(
     Returns:
         A new, noisy sequence.
     """
+
     # A deterministic hash-free wobble: cheap, reproducible, and independent per
     # landmark and axis, without depending on any particular RNG implementation.
     def wobble(index: int, channel: int) -> float:
