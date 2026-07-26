@@ -90,15 +90,14 @@ mypy_path = "src"
 strict = true
 warn_unreachable = true
 
+# These are hardware libraries we call but never subclass or extend, and we
+# name none of their types in our own signatures. Analysing them buys nothing
+# and costs a real failure: cv2 ships stubs that import numpy, whose stubs in
+# turn use syntax newer than our declared minimum Python version, so checking
+# them against that floor is a syntax error on some interpreters. Not following
+# them keeps the check about our code.
 [[tool.mypy.overrides]]
-module = ["mediapipe.*", "cv2.*", "pynput.*"]
-ignore_missing_imports = true
-
-# numpy is reached transitively through cv2's bundled stubs. Those stubs use
-# syntax newer than our declared minimum Python version, so checking against
-# that floor fails on them. We never name a numpy type ourselves, so skipping
-# them costs nothing.
-[[tool.mypy.overrides]]
-module = ["numpy", "numpy.*"]
+module = ["mediapipe.*", "cv2.*", "pynput.*", "numpy", "numpy.*"]
 follow_imports = "skip"
+follow_imports_for_stubs = true
 ignore_missing_imports = true
