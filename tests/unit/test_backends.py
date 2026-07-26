@@ -294,8 +294,14 @@ class TestPlatformModifier:
         # pynput raises at import time where there is no display server, which
         # is precisely the situation on a headless CI runner, so the import
         # itself has to be skippable rather than merely the construction.
+        # exc_type is required: importorskip defaults to catching only
+        # ModuleNotFoundError, and pynput is very much installed here -- it
+        # raises a plain ImportError from inside itself when it cannot reach a
+        # display server, which is exactly the headless CI case.
         real_keyboard = pytest.importorskip(
-            "pynput.keyboard", reason="synthetic input needs a display server"
+            "pynput.keyboard",
+            reason="synthetic input needs a display server",
+            exc_type=ImportError,
         )
         expected = real_keyboard.Key.cmd if sys.platform == "darwin" else real_keyboard.Key.ctrl
         try:
