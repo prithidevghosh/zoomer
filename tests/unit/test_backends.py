@@ -23,6 +23,7 @@ from zoomer.backends import (
     create_backend,
     dispatch,
 )
+from zoomer.backends.desktop import resolve_zoom_key
 from zoomer.types import ScrollEvent, ZoomEvent
 
 
@@ -120,12 +121,12 @@ class TestCreateBackend:
 class FakeKeyboard:
     """Stands in for pynput's keyboard controller."""
 
-    taps: list[str] = field(default_factory=list)
+    taps: list[Any] = field(default_factory=list)
     held: list[Any] = field(default_factory=list)
     released: list[Any] = field(default_factory=list)
     _depth: int = 0
 
-    def tap(self, key: str) -> None:
+    def tap(self, key: Any) -> None:
         assert self._depth > 0, "zoom keystrokes must be sent while the modifier is held"
         self.taps.append(key)
 
@@ -165,6 +166,8 @@ def make_desktop(**kwargs: Any) -> tuple[DesktopBackend, FakeKeyboard, FakeMouse
     backend._keyboard = keyboard  # type: ignore[assignment]
     backend._mouse = mouse  # type: ignore[assignment]
     backend._modifier = "MODIFIER"  # type: ignore[assignment]
+    backend._zoom_in_key = kwargs.get("zoom_in_key", "=")  # type: ignore[attr-defined]
+    backend._zoom_out_key = kwargs.get("zoom_out_key", "-")  # type: ignore[attr-defined]
     return backend, keyboard, mouse
 
 
@@ -309,3 +312,71 @@ class TestPlatformModifier:
         except RuntimeError:  # pragma: no cover - no input device available
             pytest.skip("no input device available in this environment")
         assert backend._modifier is expected  # type: ignore[attr-defined]
+
+
+class FakeKeyCode:
+    """Stands in for pynput's KeyCode, recording the virtual keycode asked for."""
+
+    def __init__(self, vk: int) -> None:
+        self.vk = vk
+
+    def __repr__(self) -> str:
+        return f"FakeKeyCode(vk={self.vk})"
+
+
+class FakeKeyboardModule:
+    KeyCode = type("KeyCode", (), {"from_vk": staticmethod(FakeKeyCode)})
+
+
+class TestZoomKeyResolution:
+    """A regression guard for zoom silently doing nothing on macOS.
+
+    pynput resolves the *character* '=' to whichever physical key its layout
+    search finds first. On macOS that is the numeric keypad's equals
+    (kVK_ANSI_KeypadEquals, 81), not the main-row key (kVK_ANSI_Equal, 24).
+    Applications bind zoom to the main row, so the keypad keystroke arrives
+    correctly flagged with Command and is then ignored -- gestures are
+    recognised, keystrokes are sent, and the document never moves.
+    """
+
+    def test_macos_names_the_main_row_equals_key_outright(self) -> None:
+        key = resolve_zoom_key("=", FakeKeyboardModule, "darwin")
+        assert isinstance(key, FakeKeyCode)
+        assert key.vk == 24  # kVK_ANSI_Equal
+
+    def test_macos_names_the_main_row_minus_key_outright(self) -> None:
+        key = resolve_zoom_key("-", FakeKeyboardModule, "darwin")
+        assert isinstance(key, FakeKeyCode)
+        assert key.vk == 27  # kVK_ANSI_Minus
+
+    def test_macos_never_resolves_a_keypad_keycode(self) -> None:
+        for char in ("=", "-"):
+            assert resolve_zoom_key(char, FakeKeyboardModule, "darwin").vk not in (78, 81)
+
+    def test_macos_does_not_pass_the_bare_character_through(self) -> None:
+        # Passing the character is precisely what caused the bug.
+        assert resolve_zoom_key("=", FakeKeyboardModule, "darwin") != "="
+
+    @pytest.mark.parametrize("platform", ["win32", "linux", "freebsd"])
+    def test_other_platforms_keep_the_character_form(self, platform: str) -> None:
+        # Unchanged where the character form is known to work; a new platform
+        # only needs an entry in the keycode table.
+        assert resolve_zoom_key("=", FakeKeyboardModule, platform) == "="
+        assert resolve_zoom_key("-", FakeKeyboardModule, platform) == "-"
+
+    def test_an_unmapped_character_falls_back_to_the_character(self) -> None:
+        assert resolve_zoom_key("0", FakeKeyboardModule, "darwin") == "0"
+
+
+class TestResolvedKeysReachTheKeyboard:
+    def test_zooming_in_taps_whatever_the_resolution_produced(self) -> None:
+        sentinel = FakeKeyCode(24)
+        backend, keyboard, _ = make_desktop(zoom_in_key=sentinel)
+        backend.zoom(1)
+        assert keyboard.taps == [sentinel]
+
+    def test_zooming_out_taps_whatever_the_resolution_produced(self) -> None:
+        sentinel = FakeKeyCode(27)
+        backend, keyboard, _ = make_desktop(zoom_out_key=sentinel)
+        backend.zoom(-1)
+        assert keyboard.taps == [sentinel]

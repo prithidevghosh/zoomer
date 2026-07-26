@@ -23,4 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A `none` input backend for trying gestures out without touching any
   application.
 
+### Fixed
+
+- Zoom had no effect on macOS. Asking pynput to type the character `=` resolved
+  to the numeric keypad's equals key rather than the main-row key, so the
+  keystroke was delivered correctly and then ignored by every viewer. The
+  main-row keycodes are now named outright.
+
 [Unreleased]: https://github.com/prithidevghosh/zoomer/commits/main

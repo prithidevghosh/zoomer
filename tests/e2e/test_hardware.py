@@ -17,11 +17,12 @@ camera permission for the terminal.
 
 from __future__ import annotations
 
+import sys
 from itertools import pairwise
 
 import pytest
 
-from zoomer.backends.desktop import DesktopBackend
+from zoomer.backends.desktop import DesktopBackend, resolve_zoom_key
 from zoomer.tracking.camera import Camera, CameraError
 from zoomer.tracking.hand_tracker import MediaPipeHandTracker, TrackerError, ensure_model
 
@@ -89,6 +90,44 @@ class TestRealCamera:
     def test_an_absurd_camera_index_fails_with_a_helpful_message(self) -> None:
         with pytest.raises(CameraError, match="could not open camera"):
             Camera(index=99)
+
+
+class TestRealZoomKeys:
+    """Guards the bug where zoom appeared to work and moved nothing.
+
+    A fake keyboard module cannot catch this: the whole failure was in what
+    *real* pynput resolves a character to on this platform.
+    """
+
+    def test_the_real_backend_resolves_zoom_to_the_main_row_keys(self) -> None:
+        keyboard = pytest.importorskip(
+            "pynput.keyboard",
+            reason="synthetic input needs a display server",
+            exc_type=ImportError,
+        )
+        if sys.platform != "darwin":
+            pytest.skip("main-row keycodes are only pinned on macOS")
+
+        assert resolve_zoom_key("=", keyboard, sys.platform).vk == 24  # kVK_ANSI_Equal
+        assert resolve_zoom_key("-", keyboard, sys.platform).vk == 27  # kVK_ANSI_Minus
+
+    def test_the_character_form_really_does_resolve_to_the_keypad(self) -> None:
+        # Documents *why* the keycodes are pinned, by asserting the upstream
+        # behaviour that made pinning necessary. Reaching into pynput's layout
+        # table is deliberate: it is the exact mechanism that mis-resolves.
+        # Should this ever start failing, pynput has fixed the mapping and the
+        # workaround in resolve_zoom_key can be retired.
+        keyboard = pytest.importorskip(
+            "pynput.keyboard",
+            reason="synthetic input needs a display server",
+            exc_type=ImportError,
+        )
+        if sys.platform != "darwin":
+            pytest.skip("the mis-resolution is macOS specific")
+
+        mapping = keyboard.Controller()._mapping
+        assert mapping["="] == 81  # kVK_ANSI_KeypadEquals, not main-row 24
+        assert mapping["-"] == 78  # kVK_ANSI_KeypadMinus, not main-row 27
 
 
 class TestRealDesktopBackend:
