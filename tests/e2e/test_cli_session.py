@@ -121,6 +121,23 @@ class TestReporting:
         assert "fewer than half" not in capsys.readouterr().err
 
 
+class TestFocusWarning:
+    """The preview window takes focus, which silently breaks zoom but not scroll."""
+
+    def test_running_with_the_preview_warns_about_focus(
+        self, stage: Stage, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("zoomer.cli._make_hud", lambda _: NullHud())
+        stage.perform(list(pinch_open(20)), ["run"])
+        assert "click your PDF viewer" in capsys.readouterr().out
+
+    def test_running_without_the_preview_does_not(
+        self, stage: Stage, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        stage.perform(list(pinch_open(20)), ["--no-hud"])
+        assert "click your PDF viewer" not in capsys.readouterr().out
+
+
 class TestBackendSelection:
     def test_the_none_backend_announces_that_nothing_will_be_sent(
         self, stage: Stage, capsys: pytest.CaptureFixture[str]

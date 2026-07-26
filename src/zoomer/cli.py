@@ -216,6 +216,12 @@ def _run(config: Config) -> int:
 
     if config.input.backend == "none":
         print("recognising gestures only; nothing will be sent to any application.")
+    if config.show_hud:
+        # Zoom is a keystroke and keystrokes follow focus, but the preview
+        # window takes focus when it opens. Scrolling is a wheel event and
+        # follows the pointer instead, so without this warning the tool appears
+        # to scroll correctly while ignoring zoom entirely.
+        print("click your PDF viewer now, so zoom keystrokes reach it and not the preview.")
     print("press q or escape in the preview window, or ctrl-c here, to stop.")
 
     with session:

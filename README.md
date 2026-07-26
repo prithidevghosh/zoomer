@@ -158,6 +158,13 @@ the edges of the frame. If detection is good but the document does not move,
 zoomer likely lacks permission to control other applications — see
 [Permissions](#permissions).
 
+**Scrolling works but zooming does nothing.** Almost always focus. Zoom is sent
+as a keystroke, which goes to the *focused* window, while scrolling is sent as a
+wheel event, which goes to whatever is under the *pointer*. So if the preview
+window (or your terminal) holds focus, scrolling still reaches the document and
+zooming does not. Click your PDF viewer once, then gesture without clicking the
+preview again — or run with `--no-hud`.
+
 **It zooms when I meant to scroll.** Only one gesture is active at a time,
 decided by whichever you started more decisively. Pause briefly before switching;
 `settle_seconds` controls how long that pause needs to be.
