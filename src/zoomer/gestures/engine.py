@@ -43,6 +43,11 @@ class EngineConfig:
             A tracking glitch can teleport a landmark across the frame; without
             a ceiling that single bad sample would fire a burst of commands at
             the document.
+        max_missing_frames: How many consecutive frames may lack a hand before
+            the gesture in progress is abandoned. Hand trackers routinely lose
+            the hand for a frame or two mid-gesture, and discarding the
+            accumulator every time would mean a gesture over a slightly flaky
+            feed never completes a single step.
         min_cutoff: One-euro ``min_cutoff`` for both signals, in hertz.
         beta: One-euro ``beta`` for both signals.
         derivative_cutoff: One-euro ``derivative_cutoff`` for both signals.
@@ -57,6 +62,7 @@ class EngineConfig:
     zoom_deadzone: float = 0.05
     scroll_deadzone: float = 0.08
     max_steps_per_frame: int = 3
+    max_missing_frames: int = 5
     min_cutoff: float = 0.8
     beta: float = 0.01
     derivative_cutoff: float = 1.0
@@ -74,6 +80,10 @@ class EngineConfig:
         if self.max_steps_per_frame < 1:
             raise ValueError(
                 f"max_steps_per_frame must be at least 1, got {self.max_steps_per_frame}"
+            )
+        if self.max_missing_frames < 0:
+            raise ValueError(
+                f"max_missing_frames must be non-negative, got {self.max_missing_frames}"
             )
 
 
@@ -97,6 +107,7 @@ class GestureEngine:
         self._pointer_filter = self._make_filter()
 
         self._previous: HandFeatures | None = None
+        self._missing_frames = 0
         self._zoom_accumulator = 0.0
         self._scroll_accumulator = 0.0
 
@@ -130,9 +141,15 @@ class GestureEngine:
             complete a whole step.
         """
         if observation is None:
-            self.reset()
+            # A blink in the tracking is not the same as the user putting their
+            # hand down. Hold the gesture briefly so a dropped frame mid-stroke
+            # does not throw away the progress made so far.
+            self._missing_frames += 1
+            if self._missing_frames > self._config.max_missing_frames:
+                self.reset()
             return []
 
+        self._missing_frames = 0
         current = self._condition(extract_features(observation))
         previous, self._previous = self._previous, current
 
@@ -178,6 +195,7 @@ class GestureEngine:
         self._pointer_filter.reset()
         self._mode_lock.release()
         self._previous = None
+        self._missing_frames = 0
         self._zoom_accumulator = 0.0
         self._scroll_accumulator = 0.0
 

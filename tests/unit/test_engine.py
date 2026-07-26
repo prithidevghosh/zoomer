@@ -54,9 +54,7 @@ def total_scroll(events: list[GestureEvent]) -> int:
     return sum(e.clicks for e in events if isinstance(e, ScrollEvent))
 
 
-def run(
-    engine: GestureEngine, observations: list[HandObservation | None]
-) -> list[GestureEvent]:
+def run(engine: GestureEngine, observations: list[HandObservation | None]) -> list[GestureEvent]:
     events: list[GestureEvent] = []
     for observation in observations:
         events.extend(engine.update(observation))
@@ -65,16 +63,12 @@ def run(
 
 def widening(frames: int = 20, *, start: float = 0.05, step: float = 0.02) -> list[HandObservation]:
     """Fingers steadily opening at a fixed height."""
-    return [
-        hand(pinch_gap=start + i * step, index_y=0.50, timestamp=i / 30) for i in range(frames)
-    ]
+    return [hand(pinch_gap=start + i * step, index_y=0.50, timestamp=i / 30) for i in range(frames)]
 
 
 def closing(frames: int = 20, *, start: float = 0.45, step: float = 0.02) -> list[HandObservation]:
     """Fingers steadily coming together at a fixed height."""
-    return [
-        hand(pinch_gap=start - i * step, index_y=0.50, timestamp=i / 30) for i in range(frames)
-    ]
+    return [hand(pinch_gap=start - i * step, index_y=0.50, timestamp=i / 30) for i in range(frames)]
 
 
 def rising(frames: int = 20, *, start: float = 0.80, step: float = 0.02) -> list[HandObservation]:
@@ -252,18 +246,74 @@ class TestModeExposure:
         run(engine, list(rising(6)))
         assert engine.mode is GestureMode.SCROLLING
 
-    def test_returns_to_idle_when_the_hand_leaves(self) -> None:
+    def test_holds_the_mode_through_a_momentary_blink(self) -> None:
         engine = GestureEngine(UNFILTERED)
         run(engine, list(widening(6)))
         engine.update(None)
+        assert engine.mode is GestureMode.ZOOMING
+
+    def test_returns_to_idle_once_the_hand_is_really_gone(self) -> None:
+        engine = GestureEngine(UNFILTERED)
+        run(engine, list(widening(6)))
+        run(engine, [None] * (UNFILTERED.max_missing_frames + 1))
         assert engine.mode is GestureMode.IDLE
 
 
-class TestReset:
-    def test_a_lost_hand_resets_the_engine_implicitly(self) -> None:
-        engine = GestureEngine(UNFILTERED)
+class TestDroppedFrames:
+    """Trackers blink. A blink must not be read as the user stopping."""
+
+    def test_a_single_dropped_frame_does_not_abandon_the_gesture(self) -> None:
+        frames = list(widening(24))
+        with_gap: list[HandObservation | None] = [*frames[:12], None, *frames[12:]]
+        assert total_zoom(run(GestureEngine(UNFILTERED), with_gap)) == pytest.approx(
+            total_zoom(run(GestureEngine(UNFILTERED), list(frames))), abs=1
+        )
+
+    def test_a_gesture_survives_frequent_brief_dropouts(self) -> None:
+        # Without tolerance the accumulator resets every few frames and the
+        # gesture never completes a single step.
+        frames = widening(45)
+        flaky: list[HandObservation | None] = [
+            None if i % 7 == 6 else pose for i, pose in enumerate(frames)
+        ]
+        assert total_zoom(run(GestureEngine(UNFILTERED), flaky)) > 0
+
+    def test_the_gesture_is_abandoned_once_the_hand_is_really_gone(self) -> None:
+        config = replace(UNFILTERED, max_missing_frames=3)
+        engine = GestureEngine(config)
+        run(engine, list(widening(6)))
+        run(engine, [None] * 4)
+        # The next hand seen is a fresh baseline, not a continuation.
+        assert engine.update(hand(pinch_gap=0.95, index_y=0.10, timestamp=99.0)) == []
+
+    def test_the_dropout_budget_resets_once_the_hand_returns(self) -> None:
+        config = replace(UNFILTERED, max_missing_frames=2)
+        engine = GestureEngine(config)
+        frames = widening(30)
+        script: list[HandObservation | None] = []
+        for i, pose in enumerate(frames):
+            script.append(pose)
+            if i % 5 == 4:
+                script.extend([None, None])
+        assert total_zoom(run(engine, script)) > 0
+
+    def test_no_tolerance_can_be_configured(self) -> None:
+        config = replace(UNFILTERED, max_missing_frames=0)
+        engine = GestureEngine(config)
         run(engine, list(widening(6)))
         engine.update(None)
+        assert engine.update(hand(pinch_gap=0.95, index_y=0.10, timestamp=9.0)) == []
+
+    def test_a_negative_dropout_budget_is_rejected(self) -> None:
+        with pytest.raises(ValueError, match="max_missing_frames must be non-negative"):
+            EngineConfig(max_missing_frames=-1)
+
+
+class TestReset:
+    def test_a_hand_that_is_really_gone_resets_the_engine_implicitly(self) -> None:
+        engine = GestureEngine(UNFILTERED)
+        run(engine, list(widening(6)))
+        run(engine, [None] * (UNFILTERED.max_missing_frames + 1))
         # The frame after the hand returns is a baseline, not a jump.
         assert engine.update(hand(pinch_gap=0.90, index_y=0.10, timestamp=10.0)) == []
 
