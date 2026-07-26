@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform input backends for macOS, Windows, and Linux that drive any focused
   application: Preview, Acrobat, Chrome, Firefox, Edge, Okular, Evince.
 - Optional heads-up display showing the camera feed, tracked landmarks, and live signals.
-- TOML configuration plus an interactive calibration command.
+- TOML configuration with strict validation, plus an interactive calibration
+  command that measures the user's range of motion and prints tuned gains.
+- Tolerance for brief tracking dropouts, so a gesture survives the frames a hand
+  tracker routinely loses.
+- A `none` input backend for trying gestures out without touching any
+  application.
 
 [Unreleased]: https://github.com/zoomer-project/zoomer/commits/main

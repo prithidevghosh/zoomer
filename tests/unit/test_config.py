@@ -212,8 +212,9 @@ class TestUnknownKeys:
 
 class TestRoundTrip:
     def test_the_documented_example_config_loads(self, tmp_path: Path) -> None:
-        # This mirrors the sample shipped in the README; if it ever stops
-        # loading, the documentation is wrong.
+        # This is the exact sample documented in the README. Asserting it
+        # equals the built-in defaults keeps the documentation honest: if a
+        # default changes and the README does not, this fails.
         path = write(
             tmp_path,
             """
@@ -240,6 +241,7 @@ class TestRoundTrip:
             zoom_deadzone = 0.05
             scroll_deadzone = 0.08
             max_steps_per_frame = 3
+            max_missing_frames = 5
             min_cutoff = 0.8
             beta = 0.01
             derivative_cutoff = 1.0
