@@ -1,10 +1,13 @@
 """Camera-free gesture logic: filtering, feature extraction, and arbitration."""
 
+from zoomer.gestures.engine import EngineConfig, GestureEngine
 from zoomer.gestures.features import HandFeatures, extract_features
 from zoomer.gestures.filters import OneEuroFilter, apply_deadzone
 from zoomer.gestures.state_machine import ModeLock, ModeLockConfig
 
 __all__ = [
+    "EngineConfig",
+    "GestureEngine",
     "HandFeatures",
     "ModeLock",
     "ModeLockConfig",
