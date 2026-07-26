@@ -38,9 +38,7 @@ _MODE_COLOURS = {
 class HudView(Protocol):
     """Anything that can display the tracker's view."""
 
-    def render(
-        self, frame: Frame, observation: HandObservation | None, mode: GestureMode
-    ) -> bool:
+    def render(self, frame: Frame, observation: HandObservation | None, mode: GestureMode) -> bool:
         """Draw one frame.
 
         Returns:
@@ -56,9 +54,7 @@ class HudView(Protocol):
 class NullHud:
     """A display that shows nothing, for headless runs."""
 
-    def render(
-        self, frame: Frame, observation: HandObservation | None, mode: GestureMode
-    ) -> bool:
+    def render(self, frame: Frame, observation: HandObservation | None, mode: GestureMode) -> bool:
         """Ignore the frame and never ask to quit."""
         return True
 
@@ -85,9 +81,7 @@ class Hud:
         self._mirror = mirror
         self._closed = False
 
-    def render(
-        self, frame: Frame, observation: HandObservation | None, mode: GestureMode
-    ) -> bool:
+    def render(self, frame: Frame, observation: HandObservation | None, mode: GestureMode) -> bool:
         """Draw one frame and check for a quit request.
 
         Args:

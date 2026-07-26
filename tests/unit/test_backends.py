@@ -7,6 +7,7 @@ system without needing a desktop session or input permissions.
 
 from __future__ import annotations
 
+import contextlib
 import sys
 from dataclasses import dataclass, field
 from typing import Any
@@ -111,10 +112,8 @@ class TestCreateBackend:
         # enough that it fails for an environmental reason rather than because
         # the name is unrecognised.
         for name in BACKEND_NAMES:
-            try:
+            with contextlib.suppress(RuntimeError):
                 create_backend(name).close()
-            except RuntimeError:
-                pass
 
 
 @dataclass
@@ -277,9 +276,7 @@ class TestDesktopShutdown:
         backend.close()
         assert keyboard.released == ["MODIFIER"]
 
-    def test_close_survives_a_failing_input_device(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_close_survives_a_failing_input_device(self, monkeypatch: pytest.MonkeyPatch) -> None:
         backend, keyboard, _ = make_desktop()
 
         def explode(_: Any) -> None:

@@ -12,8 +12,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import pytest
-
 from tests.support import make_hand
+
 from zoomer.hud import Hud, NullHud
 from zoomer.tracking.camera import Frame
 from zoomer.types import GestureMode

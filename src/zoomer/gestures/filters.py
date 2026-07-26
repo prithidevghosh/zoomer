@@ -143,9 +143,7 @@ class OneEuroFilter:
         # cannot masquerade as a fast gesture and unlock the filter.
         last_value = self._value.value
         raw_derivative = 0.0 if last_value is None else (sample - last_value) / dt
-        speed = self._derivative.update(
-            raw_derivative, smoothing_alpha(self.derivative_cutoff, dt)
-        )
+        speed = self._derivative.update(raw_derivative, smoothing_alpha(self.derivative_cutoff, dt))
 
         cutoff = self.min_cutoff + self.beta * abs(speed)
         return self._value.update(sample, smoothing_alpha(cutoff, dt))

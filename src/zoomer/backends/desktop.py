@@ -28,13 +28,14 @@ are offered:
 Operating-system permissions
 ----------------------------
 Synthesising input is a privileged operation. On macOS the terminal or app
-running zoomer must be granted Accessibility permission under System Settings ›
+running zoomer must be granted Accessibility permission under System Settings >
 Privacy & Security. On Linux under Wayland, synthetic input is restricted by
 the compositor and an X11 session may be required.
 """
 
 from __future__ import annotations
 
+import contextlib
 import sys
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -145,10 +146,10 @@ class DesktopBackend:
         Without this, quitting during a zoom could strand the platform modifier
         in a held state and leave the desktop in a confusing mode.
         """
-        try:
+        # Best-effort: a display server that has already gone away must not
+        # turn shutting down into a traceback.
+        with contextlib.suppress(Exception):  # pragma: no cover - environment dependent
             self._keyboard.release(self._modifier)
-        except Exception:  # pragma: no cover - best-effort cleanup on shutdown
-            pass
 
     def _tap_with_modifier(self, key: str, count: int) -> None:
         """Hold the platform modifier and tap ``key`` ``count`` times."""

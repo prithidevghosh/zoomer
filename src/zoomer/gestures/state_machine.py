@@ -146,7 +146,9 @@ class ModeLock:
         self._mode = GestureMode.IDLE
         self._last_active = 0.0
 
-    def _sustain_or_release(self, magnitude: float, exit_threshold: float, timestamp: float) -> None:
+    def _sustain_or_release(
+        self, magnitude: float, exit_threshold: float, timestamp: float
+    ) -> None:
         """Keep the active mode alive, or release it once the hand has settled."""
         if magnitude >= exit_threshold:
             self._last_active = timestamp

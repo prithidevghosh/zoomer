@@ -267,15 +267,13 @@ def _construct(cls: type[T], values: dict[str, Any], source: str, prefix: str) -
     _reject_unknown_keys(values, known, source, prefix)
 
     try:
-        return cls(**values)  # type: ignore[return-value]
+        return cls(**values)
     except (TypeError, ValueError) as error:
         location = f"[{prefix}] " if prefix else ""
         raise ConfigError(f"{source}: {location}{error}") from error
 
 
-def _reject_unknown_keys(
-    values: dict[str, Any], known: set[str], source: str, prefix: str
-) -> None:
+def _reject_unknown_keys(values: dict[str, Any], known: set[str], source: str, prefix: str) -> None:
     """Fail on any key the schema does not define, suggesting the closest match."""
     unknown = sorted(set(values) - known)
     if not unknown:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from tests.support import (
     FakeHud,
     ScriptedFrameSource,
@@ -13,6 +12,7 @@ from tests.support import (
     pinch_open,
     swipe_up,
 )
+
 from zoomer.app import Session, SessionStats, run_calibration
 from zoomer.backends.recording import RecordingBackend
 from zoomer.calibration import CalibrationError, Calibrator
@@ -148,9 +148,8 @@ class TestShutdown:
 
     def test_components_are_closed_even_if_the_body_raised(self) -> None:
         session, backend, _, _, _ = build(list(pinch_open(5)))
-        with pytest.raises(RuntimeError, match="boom"):
-            with session:
-                raise RuntimeError("boom")
+        with pytest.raises(RuntimeError, match="boom"), session:
+            raise RuntimeError("boom")
         assert backend.closed
 
     def test_one_failing_component_does_not_strand_the_others(self) -> None:

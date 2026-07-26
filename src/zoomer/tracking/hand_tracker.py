@@ -91,7 +91,7 @@ def ensure_model(path: Path | None = None, *, url: str = MODEL_URL) -> Path:
     partial = target.with_suffix(target.suffix + ".partial")
 
     try:
-        with urllib.request.urlopen(url, timeout=60) as response:  # noqa: S310 - fixed https URL
+        with urllib.request.urlopen(url, timeout=60) as response:
             partial.write_bytes(response.read())
     except (urllib.error.URLError, OSError, TimeoutError) as error:
         partial.unlink(missing_ok=True)
@@ -152,7 +152,9 @@ class MediaPipeHandTracker:
             )
             self._landmarker: Any = vision.HandLandmarker.create_from_options(options)
         except Exception as error:  # pragma: no cover - depends on environment
-            raise TrackerError(f"could not load the hand tracking model from {bundle}: {error}") from error
+            raise TrackerError(
+                f"could not load the hand tracking model from {bundle}: {error}"
+            ) from error
 
         self._closed = False
 

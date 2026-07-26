@@ -9,7 +9,8 @@ testable without a camera or a model file.
 
 from __future__ import annotations
 
-from typing import Protocol, Sequence
+from collections.abc import Sequence
+from typing import Protocol
 
 from zoomer.types import HandObservation, Point
 

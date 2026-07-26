@@ -154,12 +154,13 @@ class TestValidation:
                 "[gestures.mode_lock]\nzoom_enter = 0.1\nzoom_exit = 0.9\n",
                 "must not exceed zoom_enter",
             ),
-            ("[gestures.mode_lock]\nsettle_seconds = -1.0\n", "settle_seconds must be non-negative"),
+            (
+                "[gestures.mode_lock]\nsettle_seconds = -1.0\n",
+                "settle_seconds must be non-negative",
+            ),
         ],
     )
-    def test_rejects_an_out_of_range_value(
-        self, tmp_path: Path, body: str, message: str
-    ) -> None:
+    def test_rejects_an_out_of_range_value(self, tmp_path: Path, body: str, message: str) -> None:
         with pytest.raises(ConfigError, match=message):
             load_config(write(tmp_path, body))
 
@@ -196,10 +197,8 @@ class TestUnknownKeys:
         with pytest.raises(ConfigError, match="unknown setting 'zoom_entry'"):
             load_config(write(tmp_path, "[gestures.mode_lock]\nzoom_entry = 0.5\n"))
 
-    def test_the_error_lists_the_settings_that_would_have_been_valid(
-        self, tmp_path: Path
-    ) -> None:
-        with pytest.raises(ConfigError, match="Valid settings are:.*index"):
+    def test_the_error_lists_the_settings_that_would_have_been_valid(self, tmp_path: Path) -> None:
+        with pytest.raises(ConfigError, match=r"Valid settings are:.*index"):
             load_config(write(tmp_path, "[camera]\nindx = 1\n"))
 
     def test_reports_several_typos_together(self, tmp_path: Path) -> None:

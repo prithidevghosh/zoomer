@@ -9,6 +9,7 @@ testing possible without hardware.
 
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass
 
 from zoomer.backends.base import InputBackend, dispatch
@@ -120,10 +121,9 @@ class Session:
         cannot leave the camera held open or, worse, a modifier key stuck down.
         """
         for component in (self._hud, self._backend, self._tracker, self._source):
-            try:
+            # Shutdown must never mask the reason the run ended.
+            with contextlib.suppress(Exception):
                 component.close()
-            except Exception:  # noqa: BLE001 - shutdown must not mask the original exit
-                pass
 
     def __enter__(self) -> Session:
         return self

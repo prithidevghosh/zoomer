@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:  # pragma: no cover - import only for type checking
-    import numpy as np
+    pass
 
 __all__ = ["Camera", "CameraError", "Frame", "FrameSource"]
 

@@ -70,9 +70,7 @@ class TestPinch:
         # units must cancel that out exactly.
         aspect = 16 / 9
         square = extract_features(make_hand(pinch_gap=0.20, aspect_ratio=1.0)).pinch
-        widescreen = extract_features(
-            make_hand(pinch_gap=0.20 / aspect, aspect_ratio=aspect)
-        ).pinch
+        widescreen = extract_features(make_hand(pinch_gap=0.20 / aspect, aspect_ratio=aspect)).pinch
         assert square == pytest.approx(widescreen)
 
     def test_a_pinch_reads_the_same_whether_held_flat_or_upright(self) -> None:
@@ -97,9 +95,7 @@ class TestPinch:
             wrist=Point(0.50, 0.80),
             aspect_ratio=aspect,
         )
-        assert extract_features(horizontal).pinch == pytest.approx(
-            extract_features(upright).pinch
-        )
+        assert extract_features(horizontal).pinch == pytest.approx(extract_features(upright).pinch)
 
 
 class TestPointer:

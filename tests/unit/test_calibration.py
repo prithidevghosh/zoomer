@@ -143,9 +143,7 @@ class TestMeasuringRange:
             glitched.observe(features(value))
         glitched.observe(features(87.0))
 
-        assert glitched.result().pinch_range == pytest.approx(
-            honest.result().pinch_range, rel=0.15
-        )
+        assert glitched.result().pinch_range == pytest.approx(honest.result().pinch_range, rel=0.15)
 
     def test_trimming_can_be_switched_off(self) -> None:
         calibrator = Calibrator(min_samples=5, trim=0.0)

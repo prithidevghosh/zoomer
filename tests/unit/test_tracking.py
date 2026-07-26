@@ -174,5 +174,5 @@ class TestModelCache:
             "urllib.request.urlopen",
             lambda *_, **__: (_ for _ in ()).throw(urllib.error.URLError("offline")),
         )
-        with pytest.raises(TrackerError, match="tracking.model_path"):
+        with pytest.raises(TrackerError, match=r"tracking\.model_path"):
             ensure_model(target)

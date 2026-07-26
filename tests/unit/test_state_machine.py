@@ -24,19 +24,17 @@ QUIET = {"zoom_speed": 0.0, "scroll_speed": 0.0}
 
 
 class TestConfigValidation:
-    @pytest.mark.parametrize(
-        "field", ["zoom_enter", "zoom_exit", "scroll_enter", "scroll_exit"]
-    )
+    @pytest.mark.parametrize("field", ["zoom_enter", "zoom_exit", "scroll_enter", "scroll_exit"])
     def test_rejects_a_non_positive_threshold(self, field: str) -> None:
         with pytest.raises(ValueError, match=f"{field} must be positive"):
             ModeLockConfig(**{field: 0.0})  # type: ignore[arg-type]
 
     def test_rejects_a_zoom_exit_above_its_enter_threshold(self) -> None:
-        with pytest.raises(ValueError, match="zoom_exit .* must not exceed zoom_enter"):
+        with pytest.raises(ValueError, match=r"zoom_exit .* must not exceed zoom_enter"):
             ModeLockConfig(zoom_enter=0.3, zoom_exit=0.9)
 
     def test_rejects_a_scroll_exit_above_its_enter_threshold(self) -> None:
-        with pytest.raises(ValueError, match="scroll_exit .* must not exceed scroll_enter"):
+        with pytest.raises(ValueError, match=r"scroll_exit .* must not exceed scroll_enter"):
             ModeLockConfig(scroll_enter=0.3, scroll_exit=0.9)
 
     def test_allows_equal_enter_and_exit_meaning_no_hysteresis(self) -> None:

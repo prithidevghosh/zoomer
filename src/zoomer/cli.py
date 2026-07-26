@@ -14,9 +14,9 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
-from typing import Sequence
 
 from zoomer import __version__
 from zoomer.app import Session, SessionStats, run_calibration
@@ -29,7 +29,6 @@ from zoomer.tracking.camera import Camera, CameraError
 from zoomer.tracking.hand_tracker import (
     MediaPipeHandTracker,
     TrackerError,
-    default_model_path,
     ensure_model,
 )
 

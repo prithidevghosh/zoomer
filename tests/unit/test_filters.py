@@ -7,6 +7,7 @@ must not drift, a fast gesture must not lag, and noise must not accumulate.
 from __future__ import annotations
 
 import random
+from itertools import pairwise
 
 import pytest
 
@@ -161,7 +162,7 @@ class TestDeadzone:
 
     def test_is_monotonic_so_a_stronger_gesture_always_wins(self) -> None:
         outputs = [apply_deadzone(v / 100, threshold=0.05) for v in range(100)]
-        assert all(b >= a for a, b in zip(outputs, outputs[1:], strict=False))
+        assert all(b >= a for a, b in pairwise(outputs))
 
     def test_rejects_a_negative_threshold(self) -> None:
         with pytest.raises(ValueError, match="non-negative"):
