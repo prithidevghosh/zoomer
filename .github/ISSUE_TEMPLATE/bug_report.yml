@@ -1,0 +1,69 @@
+name: Bug report
+description: Something does not work the way it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, it is worth running `zoomer --backend none` once. It shows
+        the preview window and reports how often your hand was detected without
+        sending anything to any application, which separates a tracking problem
+        from a gesture-tuning one.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How can we reproduce it?
+      placeholder: |
+        1. Run `zoomer` with ...
+        2. Open ... in ...
+        3. Perform a ... gesture
+    validations:
+      required: true
+
+  - type: input
+    id: detection-rate
+    attributes:
+      label: Detection rate
+      description: The percentage printed when the run ends, if you have it.
+      placeholder: "saw a hand in 87%"
+
+  - type: input
+    id: version
+    attributes:
+      label: zoomer version
+      description: Output of `zoomer --version`.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [macOS, Windows, Linux (X11), Linux (Wayland), Other]
+    validations:
+      required: true
+
+  - type: input
+    id: viewer
+    attributes:
+      label: PDF viewer
+      description: Which application you were trying to control.
+      placeholder: Preview, Chrome, Acrobat, Okular, ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Contents of your config file, if you have one.
+      render: toml
