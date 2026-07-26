@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import textwrap
 from pathlib import Path
 
@@ -166,7 +167,9 @@ class TestValidation:
 
     def test_the_error_names_the_file_it_came_from(self, tmp_path: Path) -> None:
         path = write(tmp_path, "[camera]\nindex = -1\n")
-        with pytest.raises(ConfigError, match=str(path)):
+        # Escaped because a Windows path is full of backslashes, which are
+        # regex escapes rather than literal separators.
+        with pytest.raises(ConfigError, match=re.escape(str(path))):
             load_config(path)
 
     def test_the_error_names_the_section_it_came_from(self, tmp_path: Path) -> None:

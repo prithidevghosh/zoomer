@@ -290,8 +290,13 @@ class TestPlatformModifier:
     def test_macos_uses_command_and_other_platforms_use_control(self) -> None:
         # Verified against the real pynput key constants rather than a fake,
         # since picking the wrong modifier silently breaks zoom everywhere.
-        from pynput import keyboard as real_keyboard
-
+        #
+        # pynput raises at import time where there is no display server, which
+        # is precisely the situation on a headless CI runner, so the import
+        # itself has to be skippable rather than merely the construction.
+        real_keyboard = pytest.importorskip(
+            "pynput.keyboard", reason="synthetic input needs a display server"
+        )
         expected = real_keyboard.Key.cmd if sys.platform == "darwin" else real_keyboard.Key.ctrl
         try:
             backend = DesktopBackend()
