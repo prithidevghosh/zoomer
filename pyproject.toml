@@ -93,3 +93,12 @@ warn_unreachable = true
 [[tool.mypy.overrides]]
 module = ["mediapipe.*", "cv2.*", "pynput.*"]
 ignore_missing_imports = true
+
+# numpy is reached transitively through cv2's bundled stubs. Those stubs use
+# syntax newer than our declared minimum Python version, so checking against
+# that floor fails on them. We never name a numpy type ourselves, so skipping
+# them costs nothing.
+[[tool.mypy.overrides]]
+module = ["numpy", "numpy.*"]
+follow_imports = "skip"
+ignore_missing_imports = true
