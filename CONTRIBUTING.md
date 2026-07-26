@@ -6,7 +6,7 @@ that work better than ours are all welcome.
 ## Getting set up
 
 ```bash
-git clone https://github.com/zoomer-project/zoomer
+git clone https://github.com/prithidevghosh/zoomer
 cd zoomer
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"

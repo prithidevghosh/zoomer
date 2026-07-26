@@ -33,7 +33,7 @@ pip install zoomer
 Or from a clone:
 
 ```bash
-git clone https://github.com/zoomer-project/zoomer
+git clone https://github.com/prithidevghosh/zoomer
 cd zoomer
 pip install -e ".[dev]"
 ```

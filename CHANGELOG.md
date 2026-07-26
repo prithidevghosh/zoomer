@@ -23,4 +23,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A `none` input backend for trying gestures out without touching any
   application.
 
-[Unreleased]: https://github.com/zoomer-project/zoomer/commits/main
+[Unreleased]: https://github.com/prithidevghosh/zoomer/commits/main

@@ -41,10 +41,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/zoomer-project/zoomer"
-Source = "https://github.com/zoomer-project/zoomer"
-Issues = "https://github.com/zoomer-project/zoomer/issues"
-Changelog = "https://github.com/zoomer-project/zoomer/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/prithidevghosh/zoomer"
+Source = "https://github.com/prithidevghosh/zoomer"
+Issues = "https://github.com/prithidevghosh/zoomer/issues"
+Changelog = "https://github.com/prithidevghosh/zoomer/blob/main/CHANGELOG.md"
 
 [project.scripts]
 zoomer = "zoomer.cli:main"
