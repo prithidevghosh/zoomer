@@ -55,6 +55,7 @@ packages = ["src/zoomer"]
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-ra --strict-markers --strict-config"
 markers = [
     "hardware: requires a real camera or a real desktop session (deselected by default in CI)",
